@@ -62,6 +62,7 @@ python camera_preview.py
 2. Install libraries used in each respective script. If you dont have it installed, the error will say which package is missing. You just need to install that using pip or other package managers.
 ```
 pip install tqdm
+pip install tkinter
 ```
 3. Enjoy~
 
