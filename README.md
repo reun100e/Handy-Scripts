@@ -46,6 +46,16 @@ python find_similarity_foldername.py
 
 ![image](https://github.com/reun100e/Handy-Scripts/assets/47780896/24edc035-c87d-4cf7-944a-e0118e625e45)
 
+### 4. Preview webcameras available in your computer
+
+Run this script to preview chose and preview all available cameras in your pc
+```
+python camera_preview.py
+```
+
+![image](https://github.com/reun100e/Handy-Scripts/assets/47780896/a882f7db-98da-47bb-b61f-7eab08518b61)
+
+
 ## Pre-requisites
 
 1. Install Python and set it up
