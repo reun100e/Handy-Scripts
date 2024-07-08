@@ -63,8 +63,12 @@ Now lets say you have imported all photos from phone or camera and everything is
 ```
 python sort_media_by_date_taken.py <your media folder directory>
 ```
+
+![image](https://github.com/reun100e/Handy-Scripts/assets/47780896/a5932346-f5d6-481f-9c25-6d677a8ccfe6)
+
 You can add custom extensions to this script by modifying the config.json file.
 
+![Screenshot 2024-07-08 231833](https://github.com/reun100e/Handy-Scripts/assets/47780896/a3e6be02-80ca-4492-ac89-fe73cee5c466)
 
 ## Pre-requisites
 
