@@ -46,7 +46,17 @@ python find_similarity_foldername.py
 
 ![image](https://github.com/reun100e/Handy-Scripts/assets/47780896/24edc035-c87d-4cf7-944a-e0118e625e45)
 
-### 4. Sort photos and videos in to separate folders by date
+### 4. Preview webcameras available in your computer
+
+Run this script to preview chose and preview all available cameras in your pc
+```
+python camera_preview.py
+```
+
+![image](https://github.com/reun100e/Handy-Scripts/assets/47780896/a882f7db-98da-47bb-b61f-7eab08518b61)
+
+
+### 5. Sort photos and videos in to separate folders by date
 
 Now lets say you have imported all photos from phone or camera and everything is in one single folder or you have nested folders of the same. You want to sort all your photos and videos in to separate folders based on date taken. This script helps you accomplish exactly that:
 
@@ -55,12 +65,14 @@ python sort_media_by_date_taken.py <your media folder directory>
 ```
 You can add custom extensions to this script by modifying the config.json file.
 
+
 ## Pre-requisites
 
 1. Install Python and set it up
 2. Install libraries used in each respective script. If you dont have it installed, the error will say which package is missing. You just need to install that using pip or other package managers.
 ```
 pip install tqdm
+pip install tkinter
 pip install pymediainfo
 ```
 3. Enjoy~
