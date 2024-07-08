@@ -1,0 +1,24 @@
+{
+    "photo_extensions": [
+        "jpg",
+        "jpeg",
+        "png",
+        "tiff",
+        "bmp",
+        "gif",
+        "heic",
+        "webp"
+    ],
+    "video_extensions": [
+        "mp4",
+        "mov",
+        "avi",
+        "mkv",
+        "flv",
+        "wmv",
+        "m4v",
+        "3gp",
+        "ts",
+        "mts"
+    ]
+}
