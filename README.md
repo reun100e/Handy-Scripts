@@ -89,6 +89,8 @@ You can add custom extensions to this script by modifying the config.json file.
 ### 2.1 Cast photos not appearing in Jellyfin
 In Jellyfin, sometimes the cast photo doesn't show unless the cast page is visited once. This script visits all the cast pages in you Jellyfin so that you don't have to spend another month clicking every cast image. Setup an API from Jellyfin admin settings, give it to the script, and point it to server url - the script will do its job. The script is not mine. It's from [here](https://github.com/jellyfin/jellyfin/issues/8103). This is temporary fix and the issue will likely be fixed in future versions.
 
+![image](https://github.com/user-attachments/assets/c03627b2-30fb-40c4-9e90-edfbf5ca9797)
+
 ```
 python Jellyfin-repair-cast-not-showing.py
 ```
@@ -96,14 +98,27 @@ python Jellyfin-repair-cast-not-showing.py
 ### 2.2 Customized m3u playlist and scheduled guide generation from iptv.org
 If you use m3u streams from [iptv.org](https://github.com/iptv-org/iptv) and wants your own custom m3u playlist as well as generate it's guide.xml using [epg](https://github.com/iptv-org/epg) on a schedule, then this is the script for you. I wrote this to use in a windows machine hence powershell. You may use gpt to convert this to your language of choice.
 
-1. Download all the files in this repo folder "2.2. Customized TV playlist and guide from ipvt.org".
-2. Add Tv channels you want in tv.json.
-2. Run the 'updateTV.ps1'.
-4. You can automate running the 'updateTV.ps1' using 'updateTV_Scheduler.ps1'.
-5. Setup 'updateTV_Scheduler.ps1' as a service using [NSSM](https://nssm.cc/).
+1. Get all the files "2.2. Customized TV playlist and guide from ipvt.org".
 
+![image](https://github.com/user-attachments/assets/44327790-2469-4b6a-aa77-0cd0012eaadd)
+
+3. Add Tv channels you want in tv.json.
+
+![image](https://github.com/user-attachments/assets/2f53f117-9320-4340-90ec-af83865ef460)
+
+2. You may manualy run the 'updateTV.ps1' manually or schedule it.
+4. You can automate the running of 'updateTV.ps1' by running 'updateTV_Scheduler.ps1' a service. Change the path pointing to 'updateTV.ps1' as well as the schedule as needed.
+
+![image](https://github.com/user-attachments/assets/ab01ffb9-cc1c-4af3-bd56-44360cc246aa)
+
+6. Setup 'updateTV_Scheduler.ps1' as a service using [NSSM](https://nssm.cc/).
+After downloading NSSM, using cmd, cd to the nssm folder and run this command after updating the path to your scheduler script 'updateTV_Scheduler.ps1': 
 ```
-
+nssm install updateTv "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" "-NoProfile -WindowStyle Hidden -File C:\path_to\updateTV_Scheduler.ps1"
+```
+Use this command to edit the service using nssm if needed.
+```
+nsssm edit updateTv
 ```
 
 # Pre-requisites
