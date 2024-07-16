@@ -167,3 +167,28 @@ npm run grab -- --channels=$customChannelsPath
 Write-Output "EPG generation completed successfully."
 
 Set-Location ..
+
+# MAKE guide.xml USABLE FOR JELLYFIN
+
+# Define input and output file paths
+$inputFile = "C:\update TV\epg\guide.xml"
+$outputFile = "C:\update TV\guideXMLTV.xml"
+
+# Read the content of the input file
+$content = Get-Content -Path $inputFile -Raw
+
+# Replace the encoding in the first line from "UTF-8" to "ISO-8859-1"
+$content = $content -replace 'encoding="UTF-8"', 'encoding="ISO-8859-1"'
+
+# Replace unescaped ampersands with &amp;
+# This regex ensures that it does not replace already escaped & (i.e., &amp;, &lt;, &gt;, etc.)
+$escapedContent = $content -replace '(&)(?!amp;|lt;|gt;|quot;|apos;)', '&amp;'
+
+# Write the escaped content to the output file
+Set-Content -Path $outputFile -Value $escapedContent
+
+Write-Host "Encoding has been changed and ampersands in $inputFile have been escaped. The result has been saved to $outputFile"
+
+Write-Output "TV Guide updated successfully."
+
+Start-Sleep -Seconds 10
