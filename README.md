@@ -1,8 +1,6 @@
 # Handy-Scripts
 Scripts for simple tasks which saves your ass when you got to do it 1000 times over.
 
-Please read the code and use with caution. You are liable for any damages from using this code.
-
 # Contents
 
 | Category                      | Repo folder                                                                  | Description                                                                                     |
