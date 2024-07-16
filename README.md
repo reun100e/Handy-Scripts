@@ -22,7 +22,7 @@ Please read the code and use with caution. You are liable for any damages from u
 ## 1.1 Creating a folder for every file in it
 Lets say you have your movie collection. You want to create a folder for each movie and rename it to respective movie name.
 
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/995ec201-a857-4021-ae8e-80f49478e5ea" alt="Folder Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/995ec201-a857-4021-ae8e-80f49478e5ea" alt="Folder Creation Example" width="auto" height="auto">
 
 
 
@@ -44,7 +44,7 @@ Or use this script which is the same script in steroids. It checks for all video
 python check_folders_for_videos_and_subtitles.py
 ```
 
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/33a56fec-461a-4510-9af8-0255d6d803df" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/33a56fec-461a-4510-9af8-0255d6d803df" alt="Creation Example" width="auto" height="auto">
 
 
 ## 1.3 Comparing two directories for same or similar folders
@@ -53,14 +53,14 @@ Now lets say you want to compare if two folders contain the same sub folders. Th
 ```
 python find_same_foldername.py
 ```
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/5c79f158-afcb-4551-9fcc-b6e2c5108f5a" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/5c79f158-afcb-4551-9fcc-b6e2c5108f5a" alt="Creation Example" width="auto" height="auto">
 
 Or use this script which gives similar results. This is extremely useful when there might be a typo or different case usage for similar content.
 ```
 python find_similarity_foldername.py
 ```
 
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/24edc035-c87d-4cf7-944a-e0118e625e45" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/24edc035-c87d-4cf7-944a-e0118e625e45" alt="Creation Example" width="auto" height="auto">
 
 ## 1.4 Preview webcameras available in your computer
 
@@ -68,7 +68,7 @@ Run this script to preview chose and preview all available cameras in your pc
 ```
 python camera_preview.py
 ```
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/a882f7db-98da-47bb-b61f-7eab08518b61" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/a882f7db-98da-47bb-b61f-7eab08518b61" alt="Creation Example" width="auto" height="500">
 
 
 ## 1.5 Sort photos and videos in to separate folders by date
@@ -78,18 +78,18 @@ Now lets say you have imported all photos from phone or camera and everything is
 ```
 python sort_media_by_date_taken.py <your media folder directory>
 ```
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/a5932346-f5d6-481f-9c25-6d677a8ccfe6" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/a5932346-f5d6-481f-9c25-6d677a8ccfe6" alt="Creation Example" width="auto" height="500">
 
 You can add custom extensions to this script by modifying the config.json file.
 
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/a3e6be02-80ca-4492-ac89-fe73cee5c466" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/a3e6be02-80ca-4492-ac89-fe73cee5c466" alt="Creation Example" width="auto" height="auto">
 
 
 # Jellyfin helpers
 ## 2.1 Cast photos not appearing in Jellyfin
 In Jellyfin, sometimes the cast photo doesn't show unless the cast page is visited once. This script visits all the cast pages in you Jellyfin so that you don't have to spend another month clicking every cast image. Setup an API from Jellyfin admin settings, give it to the script, and point it to server url - the script will do its job. The script is not mine. It's from [here](https://github.com/jellyfin/jellyfin/issues/8103). This is temporary fix and the issue will likely be fixed in future versions.
 
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/c03627b2-30fb-40c4-9e90-edfbf5ca9797" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/c03627b2-30fb-40c4-9e90-edfbf5ca9797" alt="Creation Example" width="auto" height="auto">
 
 ```
 python Jellyfin-repair-cast-not-showing.py
@@ -104,12 +104,12 @@ If you use m3u streams from [iptv.org](https://github.com/iptv-org/iptv) and wan
 
 1. Add Tv channels you want in tv.json.
 
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/2f53f117-9320-4340-90ec-af83865ef460" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/2f53f117-9320-4340-90ec-af83865ef460" alt="Creation Example" width="auto" height="500">
 
 1. You may manualy run the 'updateTV.ps1' manually or schedule it.
 2. You can automate the running of 'updateTV.ps1' by running 'updateTV_Scheduler.ps1' a service. Change the path pointing to 'updateTV.ps1' as well as the schedule as needed.
 
-<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/ab01ffb9-cc1c-4af3-bd56-44360cc246aa" alt="Creation Example" width="500" height="auto">
+<img src="https://github.com/reun100e/Handy-Scripts/assets/47780896/ab01ffb9-cc1c-4af3-bd56-44360cc246aa" alt="Creation Example" width="auto" height="auto">
 
 6. Setup 'updateTV_Scheduler.ps1' as a service using [NSSM](https://nssm.cc/).
 After downloading NSSM, using cmd, cd to the nssm folder and run this command after updating the path to your scheduler script 'updateTV_Scheduler.ps1':
