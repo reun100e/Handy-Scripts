@@ -1,6 +1,6 @@
 # updateTV_Scheduler.ps1
 $taskName = "updateTV"
-$scriptPath = "C:\update TV\updateTV.ps1"
+$scriptPath = "your_path_to\updateTV.ps1"
 
 # Remove existing task if it exists
 if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
