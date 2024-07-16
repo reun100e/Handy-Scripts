@@ -74,7 +74,7 @@ We got the stream links, but we also need to get channel guides ([EPG](https://e
 
 ### 3. Generating guide
 Now the script runs the [iptv.org/epm](https://github.com/iptv-org/epg). Since we already pulled the latest git in the previous step, we skip that.
-- Updating the [iptv.org/epm](https://github.com/iptv-org/epg)
+- Installing/updating [iptv.org/epm](https://github.com/iptv-org/epg)
 - Runs [iptv.org/epm](https://github.com/iptv-org/epg) with filtered_channels.xml
 - [iptv.org/epm](https://github.com/iptv-org/epg) generates guide.xml
 
