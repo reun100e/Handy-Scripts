@@ -1,80 +1,153 @@
 [
   {
-    "name": "DDSports.in"
+    "_settings": {
+      "strict_mode": true
+    },
+    "_comment": "Strict Mode = TRUE means ONLY the channels listed below will be included."
   },
   {
-    "name": "AmritaTV.in"
+    "name": "9X Jalwa"
   },
   {
-    "name": "SafariTV.in"
+    "name": "9X Jhakaas"
   },
   {
-    "name": "KairaliNews.in"
+    "name": "9X Tashan"
   },
   {
-    "name": "9XM.in"
+    "name": "9XM"
   },
   {
-    "name": "9XJhakaas.in"
+    "name": "Amrita TV"
   },
   {
-    "name": "9XTashan.in"
+    "name": "Asianet"
   },
   {
-    "name": "ABPNews.in"
+    "name": "Asianet News"
   },
   {
-    "name": "Animax.jp"
+    "name": "Ayush TV"
   },
   {
-    "name": "AsianetNews.in"
+    "name": "B4U Bhojpuri"
   },
   {
-    "name": "CNNNews18.in"
+    "name": "B4U Kadak"
   },
   {
-    "name": "DDMalayalam.in"
+    "name": "B4U Movies"
   },
   {
-    "name": "DDNews.in"
+    "name": "B4U Movies India"
   },
   {
-    "name": "FlowersTV.in"
+    "name": "B4U Music"
   },
   {
-    "name": "DisneyJunior.in"
+    "name": "B4U Plus"
   },
   {
-    "name": "IndiaTV.in"
+    "name": "DD News"
   },
   {
-    "name": "KairaliWe.in"
+    "name": "DD Malayalam"
   },
   {
-    "name": "KappaTV.in"
+    "name": "DD Sports"
   },
   {
-    "name": "LokSabhaTV.in"
+    "name": "India TV"
   },
   {
-    "name": "Mh1Music.in"
+    "name": "India Today"
   },
   {
-    "name": "MTV.in"
+    "name": "Kairali News"
   },
   {
-    "name": "NDTV24x7.in"
+    "name": "Kairali We"
   },
   {
-    "name": "News18Kerala.in"
+    "name": "Kappa TV"
   },
   {
-    "name": "News18India.in"
+    "name": "News X"
   },
   {
-    "name": "NickHDPlus.in"
+    "name": "News18 Kerala"
   },
   {
-    "name": "HBO2East.us"
+    "name": "News18 Kannada"
+  },
+  {
+    "name": "Pitaara"
+  },
+  {
+    "name": "Safari TV"
+  },
+  {
+    "name": "WION"
+  },
+  {
+    "name": "Animax"
+  },
+  {
+    "name": "Disney Channel"
+  },
+  {
+    "name": "HBO"
+  },
+  {
+    "name": "Movies Now"
+  },
+  {
+    "name": "Romedy Now"
+  },
+  {
+    "name": "AXN"
+  },
+  {
+    "name": "Cartoon Network"
+  },
+  {
+    "name": "Pogo"
+  },
+  {
+    "name": "Nickelodeon"
+  },
+  {
+    "name": "Nickelodeon Sonic Hindi",
+    "tvg-id": "Sonic.in"
+  },
+  {
+    "name": "NASA TV"
+  },
+  {
+    "name": "BBC Earth"
+  },
+  {
+    "name": "Sony BBC Earth"
+  },
+  {
+    "name": "Animal Planet"
+  },
+  {
+    "name": "Discovery Channel"
+  },
+  {
+    "name": "National Geographic"
+  },
+  {
+    "name": "National Geographic Wild"
+  },
+  {
+    "name": "Sony Pix"
+  },
+  {
+    "name": "CNN International"
+  },
+  {
+    "name": "ABP News"
   }
 ]

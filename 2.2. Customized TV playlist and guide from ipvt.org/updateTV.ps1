@@ -1,194 +1,456 @@
-# CHECK FOR ACTIVE INTERNET AND WAIT FOR ONE IF NEEDED
+# PowerShell Script to Update TV Playlist and Guide using Local Repositories
+# Version: 3.1 (Local Repo Edition + Offline Mode)
 
-function Wait-ForInternetConnection {
-    param (
-        [int]$DelayInSeconds = 10
-    )
+param (
+    [switch]$SkipValidation = $false
+)
 
-    while ($true) {
-        try {
-            $request = [System.Net.WebRequest]::Create("http://www.google.com")
-            $request.Timeout = 5000
-            $response = $request.GetResponse()
-            if ($response.StatusCode -eq 200) {
-                break
-            }
-        }
-        catch {
-            Write-Host "No internet connection. Waiting for $DelayInSeconds seconds before retrying..."
-            Start-Sleep -Seconds $DelayInSeconds
-        }
+# Configuration Paths
+$ScriptDir = $PSScriptRoot
+$TvJsonPath = Join-Path $ScriptDir "tv.json"
+$PlaylistPath = Join-Path $ScriptDir "filtered_playlist.m3u"
+$EpgConfigPath = Join-Path $ScriptDir "filtered_channels.xml"
+$GuidePath = Join-Path $ScriptDir "guideXMLTV.xml"
+$IptvRepoPath = Join-Path $ScriptDir "iptv"
+$EpgRepoPath = Join-Path $ScriptDir "epg"
+$LogFile = Join-Path $ScriptDir "update.log"
+
+function Write-Log {
+    param ([string]$Message)
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogEntry = "[$TimeStamp] $Message"
+    Add-Content -Path $LogFile -Value $LogEntry
+    # Optional: Write to host as well if not already doing so
+}
+
+Write-Log "========================================"
+Write-Log "Starting TV Update Script v3.1"
+Write-Log "========================================"
+
+# Ensure Local Repos Exist (Auto-Clone)
+if (-not (Test-Path $IptvRepoPath)) {
+    Write-Host "Cloning 'iptv' repository..." -ForegroundColor Yellow
+    git clone https://github.com/iptv-org/iptv.git $IptvRepoPath
+}
+if (-not (Test-Path $EpgRepoPath)) {
+    Write-Host "Cloning 'epg' repository..." -ForegroundColor Yellow
+    git clone https://github.com/iptv-org/epg.git $EpgRepoPath
+    
+    # Auto-install dependencies for EPG
+    if (Test-Path $EpgRepoPath) {
+        Push-Location $EpgRepoPath
+        Write-Host "Installing EPG dependencies..." -ForegroundColor Yellow
+        npm install
+        Pop-Location
     }
 }
 
-#UPDATING PLAYLIST
-
-$tvJsonPath = ".\tv.json"
-$m3uUrl = "https://iptv-org.github.io/iptv/index.m3u"
-$newM3uFilePath = ".\filtered_playlist.m3u"
-$availableChannelsJsonFilePath = ".\available_channels.json"
-
-# Wait for internet connecion
-Wait-ForInternetConnection
-# Download the M3U file from the internet
-Write-Host "Updating Tv channels from iptv.org."
-$m3uContent = Invoke-RestMethod -Uri $m3uUrl -Method Get -UseBasicParsing
-
-# Load the JSON file
-$channelsToCheck = Get-Content -Path $tvJsonPath | ConvertFrom-Json
-
-function ParseM3U {
-    param ([string]$m3uContent)
-
-    $channels = @()
-    $lines = $m3uContent -split "`n"
-    for ($i = 0; $i -lt $lines.Length; $i++) {
-        if ($lines[$i] -match "^#EXTINF") {
-            $channelInfo = $lines[$i]
-            $channelUrl = $lines[$i + 1]
-            $channels += [PSCustomObject]@{
-                Info = $channelInfo
-                Url  = $channelUrl
+# Update Local Repositories to get latest channels/fixes
+if (-not $SkipValidation) {
+    Write-Host "Updating Local Repositories..." -ForegroundColor Yellow
+    foreach ($repo in @($IptvRepoPath, $EpgRepoPath)) {
+        Push-Location $repo
+        if (Test-Path ".git") {
+            try {
+                git pull --quiet
+                Write-Host "Updated $(Split-Path $repo -Leaf)" -ForegroundColor Cyan
+            } catch {
+                Write-Warning "Failed to update $(Split-Path $repo -Leaf)"
             }
-            $i++
         }
+        Pop-Location
+    }
+}
+
+# Update Local Repositories to get latest channels/fixes
+if (-not $SkipValidation) {
+    Write-Host "Updating Local Repositories..." -ForegroundColor Yellow
+    foreach ($repo in @($IptvRepoPath, $EpgRepoPath)) {
+        Push-Location $repo
+        if (Test-Path ".git") {
+            try {
+                git pull --quiet
+                Write-Host "Updated $(Split-Path $repo -Leaf)" -ForegroundColor Cyan
+            } catch {
+                Write-Warning "Failed to update $(Split-Path $repo -Leaf)"
+            }
+        }
+        Pop-Location
+    }
+}
+
+# --- FUNCTIONS ---
+
+function Parse-M3UFile {
+    param ([string]$FilePath)
+    Write-Host "Parsing M3U: $FilePath" -ForegroundColor Cyan
+    
+    $channels = @()
+    if (Test-Path $FilePath) {
+        $lines = Get-Content $FilePath
+        $currentChannel = @{}
+
+        foreach ($line in $lines) {
+            $line = $line.Trim()
+            if ($line.StartsWith("#EXTINF")) {
+                $currentChannel = @{}
+                # Extract basic metadata
+                if ($line -match 'tvg-id="([^"]*)"') { $currentChannel["TvgId"] = $matches[1] }
+                if ($line -match 'tvg-logo="([^"]*)"') { $currentChannel["Logo"] = $matches[1] }
+                if ($line -match 'group-title="([^"]*)"') { $currentChannel["Group"] = $matches[1] }
+                
+                # Extract Name (everything after the last comma)
+                $nameStyles = $line -split ","
+                $currentChannel["Name"] = $nameStyles[-1].Trim()
+                $currentChannel["RawInfo"] = $line
+            }
+            elseif ($line -match "^https?") {
+                if ($currentChannel.Keys.Count -gt 0) {
+                    $currentChannel["Url"] = $line
+                    # Use Hashtable directly
+                    $channels += $currentChannel
+                    $currentChannel = @{} # Reset
+                }
+            }
+        }
+    } else {
+        Write-Warning "File not found: $FilePath"
     }
     return $channels
 }
 
-$m3uChannels = ParseM3U $m3uContent
-$matchedChannels = @()
+function Load-EpgSiteIds {
+    # Loads TataPlay and DishTV mappings for better EPG
+    $sites = @("tataplay.com", "dishtv.in")
+    $mappings = @{} # Key: ChannelName (normalized), Value: {Site, SiteId, XmlTvId}
 
-Write-Host "Collecting subscribed channels (see tv.json)."
-foreach ($channel in $channelsToCheck) {
-    $matchedChannel = $m3uChannels | Where-Object { $_.Info -match $channel.name }
-    if ($matchedChannel) {
-        $matchedChannels += $matchedChannel
-    }
-}
-
-"#EXTM3U" | Out-File -FilePath $newM3uFilePath -Encoding UTF8
-
-foreach ($channel in $matchedChannels) {
-    $channel.Info | Out-File -FilePath $newM3uFilePath -Append -Encoding UTF8
-    $channel.Url | Out-File -FilePath $newM3uFilePath -Append -Encoding UTF8
-}
-
-$uniqueChannels = $m3uChannels | Sort-Object -Property Url -Unique
-$availableChannelsJson = $uniqueChannels | ForEach-Object {
-    $channelName = if ($_ -match 'tvg-id="([^"]+)"') { $matches[1] } else { $_.Info }
-    [PSCustomObject]@{
-        name = $channelName
-        url  = $_.Url
-    }
-} | ConvertTo-Json -Depth 2
-
-$availableChannelsJson | Out-File -FilePath $availableChannelsJsonFilePath -Encoding UTF8
-
-Write-Output "Filtered playlist created: $newM3uFilePath"
-Write-Output "Available channels JSON created: $availableChannelsJsonFilePath"
-
-#UPDATING CHANNELS
-
-# Define paths
-$repoPath = ".\epg"
-$outputXmlPath = ".\filtered_channels.xml"
-
-# Change directory to the repository path
-Set-Location -Path $repoPath
-
-# Wait for internet connecion
-Wait-ForInternetConnection
-
-# Pull the latest changes from the GitHub repository
-Write-Host "Updating subscribed channel data from iptv.org."
-git pull
-
-# Change back to the original directory to access tv.json and save filtered_channels.xml
-Set-Location ..
-
-# Load tv.json
-$tvJson = Get-Content -Path $tvJsonPath | ConvertFrom-Json
-
-Write-Host "Filtering channels."
-# Initialize filtered_channels.xml
-$xmlContent = @()
-$xmlContent += '<?xml version="1.0" encoding="UTF-8"?>'
-$xmlContent += '<channels>'
-
-# Search for corresponding lines in all .xml files within nested folders
-$xmlFiles = Get-ChildItem -Path "$repoPath\sites" -Recurse -Filter *.xml
-
-foreach ($tvEntry in $tvJson) {
-    $channelName = $tvEntry.name
-
-    foreach ($xmlFile in $xmlFiles) {
-        $lines = Get-Content -Path $xmlFile.FullName
-        foreach ($line in $lines) {
-            if ($line -like "*$channelName*") {
-                $xmlContent += $line
+    foreach ($site in $sites) {
+        $xmlPath = Join-Path $EpgRepoPath "sites\$site\$site.channels.xml"
+        if (Test-Path $xmlPath) {
+            Write-Host "Loading EPG IDs from $site..." -ForegroundColor Cyan
+            try {
+                # Load XML using standard cast (Property access is safe)
+                [xml]$xml = Get-Content $xmlPath
+                foreach ($node in $xml.channels.channel) {
+                    # Avoid methods like Trim() if possible, but string methods are usually core.
+                    # Use property access for attributes (PowerShell wraps XML attributes as properties)
+                    $nameText = "$($node.'#text')"
+                    $nameNorm = $nameText.ToLower().Trim()
+                    
+                    if (-not $mappings[$nameNorm]) {
+                        $mappings[$nameNorm] = @{
+                            Site = "$($node.site)"
+                            SiteId = "$($node.site_id)"
+                            XmlTvId = "$($node.xmltv_id)"
+                            Name = $nameText
+                        }
+                    }
+                }
+            } catch {
+                Write-Warning "Failed to load XML for $site : $_"
             }
         }
     }
+    return $mappings
 }
 
-$xmlContent += '</channels>'
+function Test-StreamValidity {
+    param (
+        [string]$Url,
+        [int]$TimeoutSec = 4
+    )
+    
+    # In Constrained Language Mode, .NET types like HttpWebRequest might be blocked.
+    # Use Invoke-WebRequest which is a native Cmdlet.
+    try {
+        # Use HEAD method first
+        $response = Invoke-WebRequest -Uri $Url -Method Head -TimeoutSec $TimeoutSec -ErrorAction Stop -UserAgent "VLC/3.0.18 LibVLC/3.0.18" -UseBasicParsing
+        if ($response.StatusCode -eq 200) { return $true }
+    }
+    catch {
+        # Fallback to GET with range if HEAD not supported/fails
+        try {
+             # Note: Invoke-WebRequest doesn't support Range header natively in older PS5 easily without custom headers
+             # But let's try a standard GET
+             $response = Invoke-WebRequest -Uri $Url -Method Get -TimeoutSec $TimeoutSec -ErrorAction Stop -UserAgent "VLC/3.0.18 LibVLC/3.0.18" -UseBasicParsing
+             if ($response.StatusCode -eq 200) { return $true }
+        } catch {
+             return $false
+        }
+    }
+    return $false
+}
 
-# Write to filtered_channels.xml
-$xmlContent | Out-File -FilePath $outputXmlPath -Encoding utf8
-Write-Host "Filtering channels completed successfully."
-Write-Host "Filtered channels XML has been created at $outputXmlPath"
+# --- MAIN LOGIC ---
 
-#GENERATING GUIDE
+# 1. Load User Requests/Config
+Write-Host "Reading tv.json..." -ForegroundColor Yellow
+$jsonContent = Get-Content $TvJsonPath -Raw
+$userConfig = $jsonContent | ConvertFrom-Json
 
-Write-Host "Generating channel guides."
+# Check Strict Mode
+$settings = $userConfig | Where-Object { $_._settings } | Select-Object -ExpandProperty _settings -ErrorAction SilentlyContinue
+$strictMode = $false
+if ($settings.strict_mode) { $strictMode = $true }
 
-# Define the path to the custom channels XML file
-$customChannelsPath = "../filtered_channels.xml"
+# 2. Load Base Playlist (Pre-load India for reference or base)
+$baseM3u = Join-Path $IptvRepoPath "streams\in.m3u"
+$baseChannels = @()
+if (Test-Path $baseM3u) { $baseChannels = Parse-M3UFile -FilePath $baseM3u }
 
-# Define the directory of the repository
-$repoDirectory = ".\epg"
+$masterList = @()
+if (-not $strictMode) {
+    Write-Host "Loading Base Playlist (India)..." -ForegroundColor Yellow
+    $masterList = $baseChannels
+    Write-Host "Base Channels Loaded: $($masterList.Count)" -ForegroundColor Green
+} else {
+    Write-Host "Strict Mode: Starting with empty playlist." -ForegroundColor Magenta
+}
 
-# Change to the repository directory
-Set-Location -Path $repoDirectory
+# 3. Load EPG Mappings
+$epgMap = Load-EpgSiteIds
 
-Write-Host "Installing IPTV epg."
-# Ensure npm dependencies are installed (optional, depending on your setup)
-npm install
+# 4. Helper: Global Search Function
+function Find-ChannelGlobally {
+    param ($Name, $Id)
+    $allM3us = Get-ChildItem -Path (Join-Path $IptvRepoPath "streams") -Filter "*.m3u" | Where-Object { $_.Name -ne "in.m3u" }
+    foreach ($file in $allM3us) {
+        if (Select-String -Path $file.FullName -Pattern $Name -SimpleMatch -Quiet) {
+            $fileChannels = Parse-M3UFile -FilePath $file.FullName
+            
+            # Exact Match
+            $found = $fileChannels | Where-Object { $_.Name -eq $Name -or ($Id -and $_.TvgId -eq $Id) } | Select-Object -First 1
+            
+            # Fuzzy Match fallback
+            if (-not $found) {
+                $found = $fileChannels | Where-Object { $_.Name -like "*$Name*" } | Select-Object -First 1
+            }
+            
+            if ($found) { 
+                $found.RawInfo = $file.Name # Store source info
+                return $found 
+            }
+        }
+    }
+    return $null
+}
 
-# Wait for internet connecion
-Wait-ForInternetConnection
+# 5. Process Configuration
+Write-Host "`nProcessing Configuration..." -ForegroundColor Yellow
 
-Write-Host "Grabbing channels guides."
-# Run the grab command with the custom channels file
-npm run grab -- --channels=$customChannelsPath
+$finalPlaylist = @()
 
-# Output a success message
-Write-Output "EPG generation completed successfully."
+if (-not $strictMode) {
+    # Blocklist Logic
+    $excludedNames = ($userConfig | Where-Object { $_.exclude -eq $true }).name
+    if ($excludedNames) {
+        Write-Host "Excluding $($excludedNames.Count) channels..." -ForegroundColor Magenta
+        $masterList = $masterList | Where-Object { $excludedNames -notcontains $_.Name }
+    }
+    $finalPlaylist = $masterList
+}
 
-Set-Location ..
+# Additions / Strict Processing
+$itemsToProcess = $userConfig | Where-Object { -not $_.exclude -and -not $_._settings -and -not $_._comment }
 
-# MAKE guide.xml USABLE FOR JELLYFIN
+foreach ($req in $itemsToProcess) {
+    if (-not $req.name) { continue }
+    $reqName = $req.name
+    $reqId = $req.'tvg-id'
+    $reqUrl = $req.url
 
-# Define input and output file paths
-$inputFile = "C:\update TV\epg\guide.xml"
-$outputFile = "C:\update TV\guideXMLTV.xml"
+    # Non-Strict: Skip if already present
+    if (-not $strictMode -and ($finalPlaylist | Where-Object { $_.Name -eq $reqName })) { continue }
 
-# Read the content of the input file
-$content = Get-Content -Path $inputFile -Raw
+    Write-Host "Processing: $reqName" -NoNewline
+    $newStream = $null
 
-# Replace the encoding in the first line from "UTF-8" to "ISO-8859-1"
-$content = $content -replace 'encoding="UTF-8"', 'encoding="ISO-8859-1"'
+    # 1. Custom
+    if ($reqUrl) {
+         Write-Host " [Custom URL]" -ForegroundColor Magenta
+         $newStream = @{ Name = $reqName; TvgId = $reqId; Url = $reqUrl; Source = "Custom" }
+    } 
+    # 2. Check India Base (Fast)
+    elseif ($baseChannels) {
+        # Try Exact first
+        $found = $baseChannels | Where-Object { $_.Name -eq $reqName } | Select-Object -First 1
+        
+        # Try Fuzzy (Substring) if Strict Mode
+        if (-not $found -and $strictMode) {
+            $found = $baseChannels | Where-Object { $_.Name -like "*$reqName*" } | Select-Object -First 1
+            if ($found) { Write-Host " [Fuzzy Match: $($found.Name)]" -NoNewline -ForegroundColor Gray }
+        }
 
-# Replace unescaped ampersands with &amp;
-# This regex ensures that it does not replace already escaped & (i.e., &amp;, &lt;, &gt;, etc.)
-$escapedContent = $content -replace '(&)(?!amp;|lt;|gt;|quot;|apos;)', '&amp;'
+        if ($found) {
+            Write-Host " [Found in India]" -ForegroundColor Green
+            $newStream = $found
+        }
+    }
+    
+    # 3. Global Search
+    if (-not $newStream) {
+        Write-Host " [Searching Global...]" -NoNewline
+        $foundGlobal = Find-ChannelGlobally -Name $reqName -Id $reqId
+        if ($foundGlobal) {
+            Write-Host " Found in $($foundGlobal.RawInfo)" -ForegroundColor Cyan
+            $newStream = $foundGlobal
+        } else {
+            Write-Host " Not Found" -ForegroundColor Red
+        }
+    }
 
-# Write the escaped content to the output file
-Set-Content -Path $outputFile -Value $escapedContent
+    # Validate and Add
+    if ($newStream) {
+        if ($SkipValidation) {
+             # Trust it
+        } elseif (-not (Test-StreamValidity -Url $newStream.Url)) {
+            Write-Host " [Stream Offline]" -ForegroundColor Red
+            continue 
+        }
+        
+        $finalPlaylist += $newStream
+    }
+}
 
-Write-Host "Encoding has been changed and ampersands in $inputFile have been escaped. The result has been saved to $outputFile"
 
-Write-Output "TV Guide updated successfully."
+# 6. EPG Matching & Final Validation Loop
+# Now we iterate the ENTIRE final playlist (Base + Added) to attach EPG
+Write-Host "`nFinalizing Playlist & EPG ($($finalPlaylist.Count) channels)..." -ForegroundColor Yellow
 
-Start-Sleep -Seconds 10
+$processedPlaylist = @()
+$epgConfigList = @()
+
+foreach ($stream in $finalPlaylist) {
+    # Optional: Skip validation for *base* channels to speed up? 
+    # User wanted "Show All", but 600 validation checks takes time.
+    # Decision: Validating 600 streams takes ~30 mins. 
+    # We should probably ONLY validate if user didn't say -SkipValidation.
+    
+    if (-not $SkipValidation) {
+        if (-not (Test-StreamValidity -Url $stream.Url)) {
+            # Skip offline channels from the base list too
+            continue
+        }
+    }
+
+    # EPG Lookup
+    $epgData = $null
+    
+    # Priority 1: Lookup by Stream Name
+    if ($stream.Name) { $epgData = $epgMap[$stream.Name.ToLower()] }
+    
+    # Priority 2: Lookup by TvgId if it looks like a name (fallback)
+    if (-not $epgData -and $stream.TvgId) { $epgData = $epgMap[$stream.TvgId.Split(".")[0].ToLower()] }
+
+    if ($epgData) {
+        $stream.TvgId = $epgData.XmlTvId
+        # Add to EPG Config
+        $epgConfigList += @{
+            Site = $epgData.Site
+            SiteId = $epgData.SiteId
+            XmlTvId = $epgData.XmlTvId
+            Name = $stream.Name
+        }
+    }
+    
+    $processedPlaylist += $stream
+}
+
+# 5. Write Playlist
+Write-Host "`nWriting Playlist to $PlaylistPath..." -ForegroundColor Yellow
+$m3uContent = "#EXTM3U`n"
+foreach ($chan in $processedPlaylist) {
+    # Construct EXTINF line
+    $logo = if ($chan.Logo) { " tvg-logo=`"$($chan.Logo)`"" } else { "" }
+    $id = if ($chan.TvgId) { " tvg-id=`"$($chan.TvgId)`"" } else { "" }
+    $group = if ($chan.Group) { " group-title=`"$($chan.Group)`"" } else { "" }
+    
+    $m3uContent += "#EXTINF:-1$id$logo$group,$($chan.Name)`n"
+    $m3uContent += "$($chan.Url)`n"
+}
+Set-Content -Path $PlaylistPath -Value $m3uContent -Encoding UTF8
+Set-Content -Path $PlaylistPath -Value $m3uContent -Encoding UTF8
+Set-Content -Path $PlaylistPath -Value $m3uContent -Encoding UTF8
+Write-Host "Playlist Saved. ($($finalPlaylist.Count) channels)" -ForegroundColor Green
+Write-Log "Playlist generated. Total Channels: $($finalPlaylist.Count)"
+Write-Log "Playlist saved to $PlaylistPath"
+
+# 6. Generate EPG (using local epg repo scripts)
+if ($epgConfigList.Count -gt 0) {
+    Write-Host "`nGenerating EPG Config..." -ForegroundColor Yellow
+    
+    # Create the channels.xml format expected by iptv-org/epg
+    $xmlContent = "<?xml version=`"1.0`" encoding=`"UTF-8`"?>`n<channels>`n"
+    foreach ($item in $epgConfigList) {
+        $xmlContent += "  <channel site=`"$($item.Site)`" site_id=`"$($item.SiteId)`" xmltv_id=`"$($item.XmlTvId)`">$($item.Name)</channel>`n"
+    }
+    $xmlContent += "</channels>"
+    
+    Set-Content -Path $EpgConfigPath -Value $xmlContent -Encoding UTF8
+
+    Write-Host "Running EPG Grabber..." -ForegroundColor Yellow
+    # Navigate to EPG repo and run grab
+    Push-Location $EpgRepoPath
+    
+    # Ensure dependencies are installed (first run only, effectively)
+    if (-not (Test-Path "node_modules")) {
+        Write-Host "Installing EPG dependencies..."
+        npm install
+    }
+
+    # Run the grabber
+    # Note: 'npm run grab' syntax might vary. The standard is check package.json.
+    # Usually: npx tcp-grab --channels=... --output=...
+    # Or via the script defined in package.json
+    
+    try {
+       # Use npx tsx directly to avoid npm argument parsing issues
+       $grabScript = Join-Path $EpgRepoPath "scripts\commands\epg\grab.ts"
+       # Ensure we use the local npx/tsx from the repo if possible, or global. 
+       # Simpler: just use the npm run command but format it carefully.
+       # Actually, npx tsx is safer if installed.
+       
+       Write-Host "Executing EPG grabber..." -ForegroundColor Cyan
+       Write-Log "Starting EPG Grabber..."
+       
+       $grabCmd = "npx tsx `"$grabScript`" --channels=`"$EpgConfigPath`" --output=`"$GuidePath`" --maxConnections=5"
+       
+       # Capture output to variable, redirect stderr to stdout
+       $epgOutput = cmd /c $grabCmd 2>&1
+       
+       # Show to user
+       $epgOutput | Write-Host
+       
+       # Log only summary lines (reduce size)
+       $epgOutput | ForEach-Object { 
+            # Remove potential null bytes or excessive spacing for matching
+            $clean = $_ -replace "\0", "" -replace "\s+", ""
+            
+            if ($clean -match "success" -or 
+                $clean -match "error" -or 
+                $clean -match "found\d+channel") {
+                
+                # Write a clean version to the log (single spaced)
+                # Collapse multiple spaces to one, remove nulls
+                $logLine = ($_ -replace "\0", "") -replace "\s+", " "
+                Write-Log "EPG: $logLine" 
+            }
+       }
+       
+       if ($LASTEXITCODE -eq 0) {
+           Write-Host "EPG Generation Complete!" -ForegroundColor Green
+           Write-Log "EPG Generation Complete."
+       } else {
+           Write-Error "EPG Grabbing failed with exit code $LASTEXITCODE"
+           Write-Log "ERROR: EPG Grabbing failed with exit code $LASTEXITCODE"
+       }
+    } catch {
+       Write-Error "EPG Generation Failed: $_"
+    }
+    
+    Pop-Location
+} else {
+    Write-Host "No EPG targets found to grab." -ForegroundColor Yellow
+}
+
+Write-Host "`nUpdate Complete!" -ForegroundColor Green
